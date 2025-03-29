@@ -14,6 +14,7 @@ from phrase_generator.data import load_parabank_data, data_generator
 from phrase_generator.model import create_transformer_model
 from phrase_generator.trainer.train import create_tasks, train_model
 
+
 class TestDataModule(unittest.TestCase):
     def setUp(self):
         # Create a temporary parabank.tsv file with known content.
@@ -24,10 +25,10 @@ class TestDataModule(unittest.TestCase):
             # For a single line, permutations of two phrases yield two pairs.
             f.write("hello\tworld\n")
             f.write("foo\tbar\n")
-    
+
     def tearDown(self):
         self.temp_dir.cleanup()
-    
+
     def test_load_parabank_data(self):
         data = load_parabank_data(filepath=self.temp_file)
         # For each line with two phrases, we expect 2 permutations.
@@ -38,7 +39,7 @@ class TestDataModule(unittest.TestCase):
         # Check that each expected pair is in the loaded data.
         self.assertTrue(expected_line1.issubset(data))
         self.assertTrue(expected_line2.issubset(data))
-    
+
     def test_data_generator(self):
         # Create a small dummy data list of phrase pairs.
         dummy_data = [("a", "b"), ("c", "d"), ("e", "f")]
@@ -53,6 +54,7 @@ class TestDataModule(unittest.TestCase):
         self.assertEqual(np.array(ones1).shape, np.array(targets).shape)
         self.assertEqual(np.array(ones2).shape, np.array(targets).shape)
 
+
 class TestModelModule(unittest.TestCase):
     def test_create_transformer_model(self):
         # Create a model with small dimensions for fast testing.
@@ -64,11 +66,11 @@ class TestModelModule(unittest.TestCase):
             n_heads=2,
             n_encoder_layers=1,
             n_decoder_layers=1,
-            mode="eval"
+            mode="eval",
         )
         # Check that the returned model is a Trax Serial model.
         self.assertTrue(isinstance(model, tl.Serial))
-    
+
     def test_model_forward_pass(self):
         # Create a model.
         model = create_transformer_model(
@@ -79,7 +81,7 @@ class TestModelModule(unittest.TestCase):
             n_heads=2,
             n_encoder_layers=1,
             n_decoder_layers=1,
-            mode="eval"
+            mode="eval",
         )
         # Dummy input: an integer array representing token ids.
         # The model expects a single input that will be duplicated internally.
@@ -95,13 +97,18 @@ class TestModelModule(unittest.TestCase):
         self.assertEqual(output.shape[0], dummy_input.shape[0])
         self.assertEqual(output.shape[1], 50)
 
+
 class TestTrainerModule(unittest.TestCase):
     def setUp(self):
         # Create dummy generators that yield fixed batches.
         self.batch_size = 2
         self.dummy_data = [("a", "b"), ("c", "d"), ("e", "f")]
-        self.train_gen = data_generator(self.dummy_data, batch_size=self.batch_size, loop=False)
-        self.eval_gen = data_generator(self.dummy_data, batch_size=self.batch_size, loop=False)
+        self.train_gen = data_generator(
+            self.dummy_data, batch_size=self.batch_size, loop=False
+        )
+        self.eval_gen = data_generator(
+            self.dummy_data, batch_size=self.batch_size, loop=False
+        )
         # Create a small transformer model.
         self.model = create_transformer_model(
             input_vocab_size=20,
@@ -111,31 +118,39 @@ class TestTrainerModule(unittest.TestCase):
             n_heads=2,
             n_encoder_layers=1,
             n_decoder_layers=1,
-            mode="train"
+            mode="train",
         )
-    
+
     def test_create_tasks(self):
         learning_rate = 0.01
-        train_task, eval_task = create_tasks(self.train_gen, self.eval_gen, learning_rate)
+        train_task, eval_task = create_tasks(
+            self.train_gen, self.eval_gen, learning_rate
+        )
         # Check that train_task and eval_task are instances of Trax’s training task classes.
         from trax.supervised.training import TrainTask, EvalTask
+
         self.assertIsInstance(train_task, TrainTask)
         self.assertIsInstance(eval_task, EvalTask)
-    
+
     def test_train_model_runs(self):
         # Create tasks.
         learning_rate = 0.01
-        train_task, eval_task = create_tasks(self.train_gen, self.eval_gen, learning_rate)
+        train_task, eval_task = create_tasks(
+            self.train_gen, self.eval_gen, learning_rate
+        )
         # Use a temporary directory for output.
         with tempfile.TemporaryDirectory() as tmpdir:
             # Run the training loop for a very small number of steps.
             n_steps = 1
             # The training loop should return without error.
-            training_loop = train_model(self.model, train_task, eval_task, output_dir=tmpdir, n_steps=n_steps)
+            training_loop = train_model(
+                self.model, train_task, eval_task, output_dir=tmpdir, n_steps=n_steps
+            )
             # We can check that the training_loop has run at least one step.
             self.assertGreaterEqual(training_loop.step, n_steps)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # For reproducibility in tests.
     random.seed(42)
     np.random.seed(42)

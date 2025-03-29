@@ -17,6 +17,7 @@ from model_utils import (
     decode,
 )
 
+
 # ===============================
 # Tests for data_utils.py
 # ===============================
@@ -46,7 +47,7 @@ class TestDataUtils(unittest.TestCase):
     def test_create_vocab(self):
         # create_vocab reads each line, converts via ord() and then appends newline as EOS.
         vocab = create_vocab(self.vocab_file)
-        expected = [65, 66, ord('\n')]
+        expected = [65, 66, ord("\n")]
         self.assertEqual(vocab, expected)
 
     def test_read_and_batch_data(self):
@@ -79,7 +80,7 @@ class TestModelUtils(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.output_dir = self.temp_dir.name
         # Create a dummy vocabulary (same as in TestDataUtils).
-        self.vocab = [65, 66, ord('\n')]
+        self.vocab = [65, 66, ord("\n")]
         # Note: your code computes vocab_size as len(vocab) + 1 (for padding).
         self.vocab_size = len(self.vocab) + 1
 
@@ -88,14 +89,14 @@ class TestModelUtils(unittest.TestCase):
 
     def test_create_model_transformer(self):
         # Test that create_model returns a Transformer model.
-        model = create_model('train', self.vocab_size, model_name='transformer')
+        model = create_model("train", self.vocab_size, model_name="transformer")
         self.assertTrue(hasattr(model, "name"))
         # For a transformer model, we expect the name to be "Transformer"
         self.assertEqual(model.name, "Transformer")
 
     def test_create_model_transformer_encoder(self):
         # Test that create_model returns a TransformerEncoder model.
-        model = create_model('train', self.vocab_size, model_name='transformer_encoder')
+        model = create_model("train", self.vocab_size, model_name="transformer_encoder")
         self.assertTrue(hasattr(model, "name"))
         self.assertEqual(model.name, "TransformerEncoder")
 
@@ -103,13 +104,18 @@ class TestModelUtils(unittest.TestCase):
         # Create dummy data streams that yield one sample.
         def dummy_stream():
             yield ([65, 66], [66, 65])
+
         train_stream = lambda: dummy_stream()
         eval_stream = lambda: dummy_stream()
-        model = create_model('train', self.vocab_size, model_name='transformer')
+        model = create_model("train", self.vocab_size, model_name="transformer")
         loop = train_task_setup(
-            model, train_stream, eval_stream,
-            self.output_dir, train_steps=10, eval_steps=5,
-            learning_rate=0.001
+            model,
+            train_stream,
+            eval_stream,
+            self.output_dir,
+            train_steps=10,
+            eval_steps=5,
+            learning_rate=0.001,
         )
         # Check that the returned loop object has a run method.
         self.assertTrue(hasattr(loop, "run"))
@@ -120,25 +126,34 @@ class TestModelUtils(unittest.TestCase):
         # Create a dummy model class.
         class DummyModel:
             name = "Transformer"
+
             def init_from_file(self, path, weights_only):
                 # Simulate successful weight loading.
                 pass
+
         dummy_model = DummyModel()
 
         # Monkey-patch model_utils.create_model so that it returns our dummy_model.
         import model_utils
+
         original_create_model = model_utils.create_model
-        model_utils.create_model = lambda mode, vocab_size, model_name="transformer": dummy_model
+        model_utils.create_model = (
+            lambda mode, vocab_size, model_name="transformer": dummy_model
+        )
 
         # Monkey-patch the fast_decode function.
         from trax import models
+
         original_fast_decode = models.transformer.fast_decode
 
-        def dummy_fast_decode(model, inputs, start_id, eos_id, max_len, temperature, n_beams):
+        def dummy_fast_decode(
+            model, inputs, start_id, eos_id, max_len, temperature, n_beams
+        ):
             # Return a numpy array with a fixed sequence:
             # [start_id, 65, 66, eos_id, 0, 0, ...] padded to max_len.
             seq = [start_id, 65, 66, eos_id] + [0] * (max_len - 4)
             return jax.numpy.array([seq])
+
         models.transformer.fast_decode = dummy_fast_decode
 
         # Prepare a temporary directory with a fake vocab file.
@@ -152,9 +167,13 @@ class TestModelUtils(unittest.TestCase):
             # Our dummy_fast_decode returns: [start_id, 65, 66, eos_id, 0, ...]
             # With start_id = eos_id = ord('\n'), the remaining tokens 65 and 66 become "A" and "B".
             result = decode(
-                dummy_model, input_sentence, self.vocab,
-                data_dir=tmpdir, vocab_filename="vocab.txt",
-                output_dir=self.output_dir, max_len=10
+                dummy_model,
+                input_sentence,
+                self.vocab,
+                data_dir=tmpdir,
+                vocab_filename="vocab.txt",
+                output_dir=self.output_dir,
+                max_len=10,
             )
             self.assertEqual(result, "AB")
 
@@ -166,5 +185,5 @@ class TestModelUtils(unittest.TestCase):
 # ===============================
 # Main entry point for the test suite.
 # ===============================
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

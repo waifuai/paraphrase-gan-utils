@@ -4,12 +4,22 @@ import jax
 from trax import models, training, optimizers, layers as tl
 from trax import data
 
-def create_model(mode, vocab_size, model_name='transformer', d_model=512, d_ff=2048,
-                 n_heads=8, n_encoder_layers=6, n_decoder_layers=6, dropout=0.1):
+
+def create_model(
+    mode,
+    vocab_size,
+    model_name="transformer",
+    d_model=512,
+    d_ff=2048,
+    n_heads=8,
+    n_encoder_layers=6,
+    n_decoder_layers=6,
+    dropout=0.1,
+):
     """
     Creates and returns a Transformer model.
     """
-    if model_name == 'transformer':
+    if model_name == "transformer":
         model = models.Transformer(
             input_vocab_size=vocab_size,
             d_model=d_model,
@@ -18,9 +28,9 @@ def create_model(mode, vocab_size, model_name='transformer', d_model=512, d_ff=2
             n_encoder_layers=n_encoder_layers,
             n_decoder_layers=n_decoder_layers,
             dropout=dropout,
-            mode=mode
+            mode=mode,
         )
-    elif model_name == 'transformer_encoder':
+    elif model_name == "transformer_encoder":
         model = models.TransformerEncoder(
             input_vocab_size=vocab_size,
             d_model=d_model,
@@ -28,13 +38,16 @@ def create_model(mode, vocab_size, model_name='transformer', d_model=512, d_ff=2
             n_heads=n_heads,
             n_layers=n_encoder_layers,
             dropout=dropout,
-            mode=mode
+            mode=mode,
         )
     else:
         raise ValueError(f"Unknown model name: {model_name}")
     return model
 
-def train_task_setup(model, train_stream, eval_stream, output_dir, train_steps, eval_steps, learning_rate):
+
+def train_task_setup(
+    model, train_stream, eval_stream, output_dir, train_steps, eval_steps, learning_rate
+):
     """
     Sets up and returns a training loop.
     """
@@ -64,23 +77,28 @@ def train_task_setup(model, train_stream, eval_stream, output_dir, train_steps, 
         eval_tasks=[eval_task],
         output_dir=output_dir,
         checkpoint_at=checkpoint_at,
-        checkpoint_low_at=checkpoint_low_at
+        checkpoint_low_at=checkpoint_low_at,
     )
 
-def decode(model, input_sentence, vocab, data_dir, vocab_filename, output_dir, max_len=256):
+
+def decode(
+    model, input_sentence, vocab, data_dir, vocab_filename, output_dir, max_len=256
+):
     """
     Decodes (paraphrases) an input sentence using a trained model.
-    
+
     The function loads model weights from a checkpoint file located in output_dir.
     """
     # Recreate the model in eval mode.
-    model = create_model('eval', len(vocab) + 1, model_name=model.name)
+    model = create_model("eval", len(vocab) + 1, model_name=model.name)
     model_path = os.path.join(output_dir, "model.pkl.gz")
     model.init_from_file(model_path, weights_only=True)
 
     # Tokenize the input sentence.
     vocab_file = os.path.join(data_dir, vocab_filename)
-    token_gen = data.tokenize(iter([input_sentence]), vocab_file=vocab_file, n_reserved_ids=0)
+    token_gen = data.tokenize(
+        iter([input_sentence]), vocab_file=vocab_file, n_reserved_ids=0
+    )
     # Convert token generator to list (assuming a single sentence)
     input_ids = next(token_gen)
     # Pad to max_len.
@@ -89,16 +107,17 @@ def decode(model, input_sentence, vocab, data_dir, vocab_filename, output_dir, m
 
     # Use Trax's fast decode.
     output_ids = models.transformer.fast_decode(
-        model, inputs,
-        start_id=ord('\n'),
-        eos_id=ord('\n'),
+        model,
+        inputs,
+        start_id=ord("\n"),
+        eos_id=ord("\n"),
         max_len=max_len,
         temperature=0.0,
-        n_beams=1
+        n_beams=1,
     )
     output_ids = output_ids[0].tolist()
     # Remove padding tokens.
     output_ids = [idx for idx in output_ids if idx != 0]
     # Detokenize: convert IDs back to characters.
-    output_sentence = "".join([chr(c) for c in output_ids if c != ord('\n')])
+    output_sentence = "".join([chr(c) for c in output_ids if c != ord("\n")])
     return output_sentence

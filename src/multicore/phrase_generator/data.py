@@ -2,6 +2,7 @@ import itertools
 import random
 import numpy as np
 
+
 def load_parabank_data(filepath="./parabank.tsv"):
     """Loads and preprocesses the ParaBank data."""
     data = []
@@ -11,6 +12,7 @@ def load_parabank_data(filepath="./parabank.tsv"):
             if len(phrases) >= 2:
                 data.extend(itertools.permutations(phrases, 2))
     return data
+
 
 def data_generator(data, batch_size=32, loop=True):
     """Generator function that yields batches of phrase pairs."""

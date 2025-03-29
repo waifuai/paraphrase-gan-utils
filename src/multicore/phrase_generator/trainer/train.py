@@ -4,10 +4,13 @@ from trax import layers as tl
 from trax.supervised import training
 import trax.optimizers
 
+
 def create_tasks(train_gen, eval_gen, learning_rate):
     """Creates training and evaluation tasks."""
-    lr_schedule = lr_lib.warmup_and_rsqrt_decay(n_warmup_steps=1000, max_value=learning_rate)
-    
+    lr_schedule = lr_lib.warmup_and_rsqrt_decay(
+        n_warmup_steps=1000, max_value=learning_rate
+    )
+
     train_task = training.TrainTask(
         labeled_data=train_gen,
         loss_layer=tl.WeightedCategoryCrossEntropy(),
@@ -22,6 +25,7 @@ def create_tasks(train_gen, eval_gen, learning_rate):
     )
 
     return train_task, eval_task
+
 
 def train_model(model, train_task, eval_task, output_dir, n_steps=10000):
     """Trains the Transformer model."""
