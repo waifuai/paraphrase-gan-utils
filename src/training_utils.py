@@ -1,255 +1,139 @@
 # src/training_utils.py
-import os
-from pathlib import Path
-from typing import Callable, List, Optional, Any, Tuple
+import numpy as np
+from transformers import (
+    Seq2SeqTrainingArguments,
+    DataCollatorForSeq2Seq,
+    PreTrainedTokenizerBase,
+)
+import evaluate
+from typing import Dict, Any, Optional
 
-import jax
-import trax
-from trax import layers as tl
-from trax import models
-from trax import optimizers
-from trax import data
-from trax.supervised import training
-from trax import lr as lr_lib
-
-import config  # Centralized configuration
-
-# Default Loss and Metrics (can be overridden)
-DEFAULT_LOSS = tl.CrossEntropyLoss
-DEFAULT_METRICS = [tl.CrossEntropyLoss(), tl.Accuracy()]
-PHRASE_LOSS = tl.WeightedCategoryCrossEntropy  # Used by phrase_generator
-PHRASE_METRICS = [tl.WeightedCategoryCrossEntropy(), tl.WeightedCategoryAccuracy()]
+# Load the BLEU metric (can be changed or expanded)
+# Using BLEU as a common seq2seq metric, SacreBLEU is often preferred for robustness.
+# Let's use SacreBLEU.
+try:
+    metric = evaluate.load("sacrebleu")
+except Exception as e:
+    print(f"Warning: Failed to load 'sacrebleu' metric ({e}). Falling back to 'bleu'.")
+    try:
+        metric = evaluate.load("bleu")
+    except Exception as e_bleu:
+        print(f"Warning: Failed to load 'bleu' metric ({e_bleu}). Metrics will be disabled.")
+        metric = None
 
 
-def create_tasks(
-    train_stream: Callable,
-    eval_stream: Callable,
-    learning_rate: float,
-    loss_layer: tl.Layer = DEFAULT_LOSS(),
-    optimizer_cls: type = optimizers.Adam,
-    lr_schedule_fn: Callable = lr_lib.warmup_and_rsqrt_decay,
-    lr_warmup_steps: int = 1000,
-    n_steps_per_checkpoint: int = config.DEFAULT_N_STEPS_PER_CHECKPOINT,
-    eval_metrics: Optional[List[tl.Layer]] = None,
-    n_eval_batches: Optional[int] = None,  # For EvalTask n_eval_batches
-) -> Tuple[training.TrainTask, training.EvalTask]:
+def create_training_args(
+    output_dir: str,
+    learning_rate: float = 2e-5,
+    per_device_train_batch_size: int = 8,
+    per_device_eval_batch_size: int = 8,
+    num_train_epochs: int = 3,
+    weight_decay: float = 0.01,
+    evaluation_strategy: str = "epoch",
+    save_strategy: str = "epoch",
+    logging_steps: int = 10,
+    predict_with_generate: bool = True,
+    push_to_hub: bool = False,
+    **kwargs,  # Allow passing other TrainingArguments
+) -> Seq2SeqTrainingArguments:
     """
-    Creates Trax training and evaluation tasks.
+    Creates and returns Seq2SeqTrainingArguments.
 
     Args:
-        train_stream: A function that returns the training data stream.
-        eval_stream: A function that returns the evaluation data stream.
-        learning_rate: The maximum learning rate.
-        loss_layer: The loss layer instance to use (default: CrossEntropyLoss).
-        optimizer_cls: The optimizer class (default: Adam).
-        lr_schedule_fn: Function to create the learning rate schedule.
-        lr_warmup_steps: Number of warmup steps for the LR schedule.
-        n_steps_per_checkpoint: Frequency of saving checkpoints.
-        eval_metrics: List of metrics for evaluation (default uses loss and accuracy).
-        n_eval_batches: Number of batches to use for evaluation (optional).
-
-    Returns:
-        A tuple containing the TrainTask and EvalTask.
-    """
-    if eval_metrics is None:
-        eval_metrics = DEFAULT_METRICS
-
-    lr_schedule = lr_schedule_fn(
-        n_warmup_steps=lr_warmup_steps, max_value=learning_rate
-    )
-
-    train_task = training.TrainTask(
-        labeled_data=train_stream(),
-        loss_layer=loss_layer,
-        optimizer=optimizer_cls(
-            learning_rate=learning_rate
-        ),  # Pass LR here for Adam etc.
-        lr_schedule=lr_schedule,
-        n_steps_per_checkpoint=n_steps_per_checkpoint,
-    )
-
-    eval_task_args = {
-        "labeled_data": eval_stream(),
-        "metrics": eval_metrics,
-    }
-    if n_eval_batches is not None:
-        eval_task_args["n_eval_batches"] = n_eval_batches
-
-    eval_task = training.EvalTask(**eval_task_args)
-
-    return train_task, eval_task
-
-
-def create_training_loop(
-    model: tl.Layer,
-    train_task: training.TrainTask,
-    eval_task: training.EvalTask,
-    output_dir: Path,
-    train_steps: int,  # Total training steps
-    eval_steps: Optional[
-        int
-    ] = None,  # Used for legacy checkpoint_at calculation if needed
-) -> training.Loop:
-    """
-    Creates a Trax training Loop.
-
-    Args:
-        model: The Trax model to train.
-        train_task: The training task.
-        eval_task: The evaluation task.
         output_dir: Directory to save checkpoints and logs.
-        train_steps: Total number of steps to train.
-        eval_steps: (Optional) Used for legacy checkpoint calculation. If None,
-                    Loop's default checkpointing based on n_steps_per_checkpoint is used.
+        learning_rate: The initial learning rate.
+        per_device_train_batch_size: Batch size per GPU/CPU for training.
+        per_device_eval_batch_size: Batch size per GPU/CPU for evaluation.
+        num_train_epochs: Total number of training epochs.
+        weight_decay: Weight decay for optimization.
+        evaluation_strategy: When to perform evaluation ('no', 'steps', 'epoch').
+        save_strategy: When to save checkpoints ('no', 'steps', 'epoch').
+        logging_steps: Log every N steps.
+        predict_with_generate: Whether to use model.generate() for evaluation predictions.
+        push_to_hub: Whether to push the model to the Hugging Face Hub.
+        **kwargs: Additional arguments for Seq2SeqTrainingArguments.
 
     Returns:
-        A configured training.Loop instance.
+        A Seq2SeqTrainingArguments instance.
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    loop_args = {
-        "model": model,
-        "tasks": train_task,
-        "eval_tasks": [eval_task],
-        "output_dir": str(output_dir),
-    }
-
-    # Optional: Replicate old checkpoint_at logic if eval_steps is provided
-    # Otherwise, rely on n_steps_per_checkpoint in TrainTask
-    if eval_steps is not None and eval_steps > 0:
-        # Ensure eval_steps is positive to avoid division by zero or infinite loops
-        checkpoint_at = [train_steps // max(1, (eval_steps * 2)), train_steps]
-        checkpoint_low_at = [train_steps // max(1, (eval_steps * 4))]
-        loop_args["checkpoint_at"] = checkpoint_at
-        loop_args["checkpoint_low_at"] = checkpoint_low_at
-        print(f"Using legacy checkpoint_at logic based on eval_steps={eval_steps}")
-    else:
-        print(
-            f"Using default checkpointing based on n_steps_per_checkpoint={train_task.n_steps_per_checkpoint}"
-        )
-
-    return training.Loop(**loop_args)
+    return Seq2SeqTrainingArguments(
+        output_dir=output_dir,
+        learning_rate=learning_rate,
+        per_device_train_batch_size=per_device_train_batch_size,
+        per_device_eval_batch_size=per_device_eval_batch_size,
+        num_train_epochs=num_train_epochs,
+        weight_decay=weight_decay,
+        evaluation_strategy=evaluation_strategy,
+        save_strategy=save_strategy,
+        logging_steps=logging_steps,
+        predict_with_generate=predict_with_generate,
+        push_to_hub=push_to_hub,
+        **kwargs,
+    )
 
 
-def run_training(loop: training.Loop, train_steps: int):
+def compute_metrics(
+    eval_pred, tokenizer: PreTrainedTokenizerBase
+) -> Optional[Dict[str, float]]:
     """
-    Runs the training loop for a specified number of steps.
+    Computes metrics (e.g., BLEU) for sequence-to-sequence evaluation.
 
     Args:
-        loop: The configured training.Loop instance.
-        train_steps: Total number of steps to train.
-    """
-    print(f"Starting training for {train_steps} steps...")
-    loop.run(n_steps=train_steps)
-    print("Training complete.")
-
-
-# Note: This decode function is specific to models using trax.models.transformer.fast_decode
-# It might need adjustments for other model types (like the manual phrase_transformer).
-# It also assumes the model was created with a 'name' attribute.
-def decode_sentence(
-    model_class_creator: Callable,  # Function to recreate the model (e.g., create_coco_model)
-    checkpoint_path: Path,
-    input_sentence: str,
-    vocab_path: Path,
-    vocab_size: int,  # Needed to recreate model
-    model_name: str,  # Needed to recreate model
-    max_len: int = config.DEFAULT_MAX_LEN,
-    temperature: float = 0.0,
-    n_beams: int = 1,
-    start_id: int = ord("\n"),  # Default EOS/SOS for char models
-    eos_id: int = ord("\n"),
-) -> str:
-    """
-    Decodes (paraphrases) an input sentence using a trained model checkpoint.
-    Assumes the model uses trax.models.transformer.fast_decode.
-
-    Args:
-        model_class_creator: Function that takes (mode, vocab_size, model_name, **kwargs)
-                             and returns a model instance.
-        checkpoint_path: Path to the model checkpoint file (e.g., model.pkl.gz).
-        input_sentence: The sentence to paraphrase.
-        vocab_path: Path to the vocabulary file used for tokenization.
-        vocab_size: The vocabulary size (including padding/reserved IDs).
-        model_name: The name of the model architecture (passed to creator).
-        max_len: Maximum sequence length for input padding and decoding.
-        temperature: Sampling temperature for decoding.
-        n_beams: Number of beams for beam search (1 for greedy).
-        start_id: Token ID to initiate decoding.
-        eos_id: Token ID that signifies end of sequence.
+        eval_pred: A tuple containing predictions and labels.
+        tokenizer: The tokenizer used for decoding.
 
     Returns:
-        The decoded (paraphrased) sentence as a string.
-
-    Raises:
-        FileNotFoundError: If checkpoint or vocab file not found.
-        Exception: If model loading or decoding fails.
+        A dictionary containing the computed metrics, or None if metric loading failed.
     """
-    if not checkpoint_path.is_file():
-        raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
-    if not vocab_path.is_file():
-        raise FileNotFoundError(f"Vocabulary file not found: {vocab_path}")
+    if metric is None:
+        print("Metric computation skipped as metric object failed to load.")
+        return None
 
-    print(f"Loading model {model_name} from {checkpoint_path} for decoding...")
-    # Recreate the model in 'predict' mode (or 'eval' if predict causes issues)
-    # Pass necessary args based on the specific creator function's signature
-    model_predict = model_class_creator(
-        mode="predict", vocab_size=vocab_size, model_name=model_name
-    )
+    predictions, labels = eval_pred
+    # Decode generated summaries, replacing -100 in labels as it's used for padding
+    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
+    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
-    # Initialize model state from the checkpoint
-    model_predict.init_from_file(str(checkpoint_path), weights_only=True)
+    # Simple post-processing: remove leading/trailing whitespace
+    decoded_preds = [pred.strip() for pred in decoded_preds]
+    # SacreBLEU expects labels to be a list of lists of strings
+    decoded_labels = [[label.strip()] for label in decoded_labels]
 
-    print(f"Tokenizing input sentence: '{input_sentence}'")
-    # Tokenize the input sentence using the provided vocabulary
-    # Assuming vocab file is compatible with trax.data.tokenize
-    token_gen = data.tokenize(
-        iter([input_sentence]), vocab_file=str(vocab_path), n_reserved_ids=0
-    )
     try:
-        input_ids = next(token_gen)
-    except StopIteration:
-        print("Warning: Tokenizer produced no output for the input sentence.")
-        return ""  # Or raise an error
+        result = metric.compute(predictions=decoded_preds, references=decoded_labels)
+        # Extract main score (e.g., 'bleu' or 'score' depending on the metric)
+        metric_key = "score" if "score" in result else "bleu"
+        if metric_key in result:
+            final_result = {metric_key: result[metric_key]}
+        else:
+            # Fallback if expected key isn't present
+            final_result = result
 
-    # Pad the input sequence
-    padded_ids = input_ids + [0] * (max_len - len(input_ids))
-    if len(padded_ids) > max_len:
-        print(f"Warning: Input sentence truncated to max_len {max_len}")
-        padded_ids = padded_ids[:max_len]
+        # Add prediction lengths (optional)
+        prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in predictions]
+        final_result["gen_len"] = np.mean(prediction_lens)
 
-    # Convert to JAX array and add batch dimension
-    inputs_batch = jax.numpy.array(padded_ids)[None, :]
+        return {k: round(v, 4) for k, v in final_result.items()}
 
-    print(f"Decoding with temperature={temperature}, n_beams={n_beams}...")
-    # Use Trax's fast decoding function
-    output_ids_batch = models.transformer.fast_decode(
-        model_predict,
-        inputs_batch,
-        start_id=start_id,
-        eos_id=eos_id,
-        max_len=max_len,
-        temperature=temperature,
-        beam_size=n_beams,  # Note: fast_decode uses beam_size parameter
-    )
+    except Exception as e:
+        print(f"Error computing metrics: {e}")
+        print("Predictions:", decoded_preds[:2]) # Print sample predictions/labels for debugging
+        print("Labels:", decoded_labels[:2])
+        return None
 
-    # Process the output (assuming batch size 1)
-    output_ids = output_ids_batch[0].tolist()
 
-    # Remove padding tokens (ID 0) and EOS token
-    # Be careful not to remove legitimate 0s if vocab uses them differently
-    cleaned_ids = [idx for idx in output_ids if idx != 0 and idx != eos_id]
+def get_data_collator(
+    tokenizer: PreTrainedTokenizerBase, model
+) -> DataCollatorForSeq2Seq:
+    """
+    Creates and returns a data collator suitable for sequence-to-sequence tasks.
 
-    print(f"Detokenizing output IDs: {cleaned_ids}")
-    # Detokenize: Convert IDs back to characters/subwords
-    # This part is highly dependent on the vocabulary type (char vs subword)
-    # Assuming character-level for now based on original decode function
-    # TODO: Make detokenization more robust (handle subwords, different vocab types)
-    try:
-        # Attempt char detokenization
-        output_sentence = "".join([chr(c) for c in cleaned_ids])
-    except ValueError:
-        print("Warning: Failed to detokenize as characters. Outputting raw IDs.")
-        output_sentence = " ".join(map(str, cleaned_ids))  # Fallback
+    Args:
+        tokenizer: The tokenizer instance.
+        model: The model instance (used by the collator).
 
-    return output_sentence
+    Returns:
+        A DataCollatorForSeq2Seq instance.
+    """
+    return DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
