@@ -1,23 +1,21 @@
-# Paraphrase Generation with Hugging Face Transformers
+# Paraphrase Generation with Google Gemini API
 
-This repository contains code for training and evaluating a sequence-to-sequence Transformer model for paraphrase generation using the Hugging Face `transformers` and `datasets` libraries. It uses a small custom dataset for demonstration purposes.
+This repository contains code for generating paraphrases using the `gemini-2.5-flash-preview-04-17` model via the Google Generative AI API.
 
 ## Project Structure
 
 ```
 .
 ├── data/
-│   ├── custom_train.tsv      # Custom training data (tab-separated: source<TAB>target)
-│   └── custom_eval.tsv       # Custom evaluation data (tab-separated: source<TAB>target)
+│   ├── custom_train.tsv      # Custom training data (tab-separated: source<TAB>target) - Used for structure reference
+│   └── custom_eval.tsv       # Custom evaluation data (tab-separated: source<TAB>target) - Used for structure reference
 ├── src/
-│   ├── config.py             # Configuration (paths, training defaults)
-│   ├── data_processing/
-│   │   └── custom_dataset.py # Loads and tokenizes the custom dataset
-│   ├── training_utils.py     # Utilities for Trainer (Args, metrics, collator)
-│   └── main.py               # Main script for training and decoding
-├── requirements.txt          # Project dependencies
+│   ├── config.py             # Configuration (paths, Gemini API key loading, model name)
+│   ├── gemini_api.py         # Module for interacting with the Gemini API
+│   └── main.py               # Main script for validating API and decoding
+├── requirements.txt          # Project dependencies (includes google-generativeai)
 ├── .venv/                    # Virtual environment (created by uv)
-├── model_output/             # Default directory for saving models/logs
+├── model_output/             # Default directory for output (less critical now)
 └── README.md
 ```
 
@@ -29,23 +27,27 @@ This repository contains code for training and evaluating a sequence-to-sequence
     cd <repository_name>
     ```
 
-2.  **Create Virtual Environment (using uv):**
+2.  **Obtain Gemini API Key:**
+    *   Get an API key from the Google AI Studio (https://aistudio.google.com/app/apikey).
+    *   Save your API key in a file named `.api-gemini` in your home directory (`~/.api-gemini`).
+
+3.  **Create Virtual Environment (using uv):**
     ```bash
     # Ensure uv is installed (e.g., pip install uv)
     python -m uv venv .venv
     ```
     *Note: On some systems, you might need to ensure pip is available in the venv (`.venv/Scripts/python.exe -m ensurepip`) and install uv inside (`.venv/Scripts/python.exe -m pip install uv`) before installing requirements.*
 
-3.  **Install Dependencies:**
-    Activate the environment (e.g., `source .venv/Scripts/activate` on Git Bash/Linux, or `.venv\Scripts\activate.bat` on Windows CMD) or use the venv's python directly:
+4.  **Install Dependencies:**
+    Activate the environment (e.g., `source .venv/bin/activate` on Git Bash/Linux, or `.venv\Scripts\activate.bat` on Windows CMD) or use the venv's python directly:
     ```bash
     .venv/Scripts/python.exe -m uv pip install -r requirements.txt
     ```
-    The `requirements.txt` file lists necessary packages like `transformers`, `datasets`, `torch`, `evaluate`, etc.
+    The `requirements.txt` file lists necessary packages like `google-generativeai`, `absl-py`, and `numpy`.
 
 ## Custom Dataset Format
 
-The custom dataset files (`data/custom_train.tsv`, `data/custom_eval.tsv`) should contain tab-separated pairs of sentences, where the first column is the source sentence and the second column is the target paraphrase. Example:
+The custom dataset files (`data/custom_train.tsv`, `data/custom_eval.tsv`) are included for historical context and potential future use, but are not directly used by the current Gemini API-based paraphrase generation logic. They contain tab-separated pairs of sentences, where the first column is the source sentence and the second column is the target paraphrase. Example:
 
 ```tsv
 Original sentence one.<TAB>Paraphrased sentence one.
@@ -54,44 +56,29 @@ Original sentence two.<TAB>Paraphrased sentence two.
 
 ## Usage
 
-The main script `src/main.py` handles training and decoding.
+The main script `src/main.py` handles validating the API connection and performing paraphrase generation.
 
-### Training
+### Validate API Connection
 
-To train a model (e.g., `t5-small`) on the custom dataset:
-
-```bash
-.venv/Scripts/python.exe src/main.py --task train_custom --model_checkpoint t5-small --output_dir ./model_output --num_train_epochs 5 --per_device_train_batch_size 2 --per_device_eval_batch_size 2
-```
-
-**Key Flags for Training:**
-
-*   `--task train_custom`: Specifies the training task.
-*   `--model_checkpoint`: (Required) The Hugging Face model identifier (e.g., `t5-small`, `google/bart-base`).
-*   `--output_dir`: Base directory to save checkpoints and logs. A subdirectory like `train_custom_t5-small` will be created inside.
-*   `--custom_train_file`: Path to the training TSV file (defaults to `data/custom_train.tsv`).
-*   `--custom_eval_file`: Path to the evaluation TSV file (defaults to `data/custom_eval.tsv`).
-*   `--num_train_epochs`: Number of training epochs (default: 3).
-*   `--per_device_train_batch_size`: Training batch size per device (default: 8).
-*   `--per_device_eval_batch_size`: Evaluation batch size per device (default: 8).
-*   `--learning_rate`: Set a specific learning rate.
-*   `--max_source_length`, `--max_target_length`: Max sequence lengths for tokenizer.
-*   `--seed`: Set a random seed.
-
-### Decoding (Inference)
-
-To generate a paraphrase for a given sentence using a trained model:
+To validate that your Gemini API key is correctly set up and the API can be reached:
 
 ```bash
-.venv/Scripts/python.exe src/main.py --task decode_custom --decode_input "This is the sentence to paraphrase." --decode_checkpoint_dir ./model_output/train_custom_t5-small
+.venv/Scripts/python.exe src/main.py --task train_custom
+```
+*(Note: The task name `train_custom` is kept for compatibility but now performs API validation instead of model training.)*
+
+### Generate Paraphrase (Decoding)
+
+To generate a paraphrase for a given sentence using the Gemini API:
+
+```bash
+.venv/Scripts/python.exe src/main.py --task decode_custom --decode_input "This is the sentence to paraphrase."
 ```
 
-**Key Flags for Decoding:**
+**Key Flags:**
 
-*   `--task decode_custom`: Specifies the decoding task.
+*   `--task decode_custom`: Specifies the paraphrase generation task.
 *   `--decode_input`: (Required) The input sentence to paraphrase.
-*   `--decode_checkpoint_dir`: (Required) Path to the directory containing the saved trained model checkpoint (e.g., the output directory from the training run).
-*   `--max_target_length`: Max length for the generated paraphrase.
 
 ## License
 
