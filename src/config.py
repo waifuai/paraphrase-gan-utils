@@ -20,7 +20,7 @@ DEFAULT_MAX_LEN = 128  # Default max sequence length for tokenizers (adjust as n
 
 # --- Gemini API Configuration ---
 GEMINI_API_KEY_PATH = Path("~/.api-gemini").expanduser()
-GEMINI_MODEL_NAME = "gemini-2.5-pro-preview-03-25"
+GEMINI_MODEL_NAME = "gemini-2.5-pro-preview-05-06"
 
 def load_gemini_api_key() -> str:
     """Loads the Gemini API key from the specified file path."""
