@@ -1,6 +1,6 @@
 # Paraphrase Generation with Google Gemini API
 
-This repository contains code for generating paraphrases using the `gemini-2.5-pro-preview-05-06` model via the Google Generative AI API.
+This repository contains code for generating paraphrases using the `gemini-2.5-pro` model via the Google Generative AI API.
 
 ## Project Structure
 
