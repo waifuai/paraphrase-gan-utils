@@ -23,7 +23,13 @@ GEMINI_API_KEY_PATH = Path("~/.api-gemini").expanduser()
 GEMINI_MODEL_NAME = "gemini-2.5-pro"
 
 def load_gemini_api_key() -> str:
-    """Loads the Gemini API key from the specified file path."""
+    """
+    Loads the Gemini API key using fallback file when env vars are not set.
+
+    Preferred sources are environment variables GEMINI_API_KEY or GOOGLE_API_KEY
+    which are handled in gemini_api.initialize_gemini_api. This function provides
+    the legacy file fallback to maintain compatibility.
+    """
     try:
         with open(GEMINI_API_KEY_PATH, "r") as f:
             api_key = f.read().strip()
