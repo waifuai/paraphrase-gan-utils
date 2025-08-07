@@ -66,10 +66,6 @@ def generate_paraphrase(input_sentence: str) -> str:
         print(f"Error calling GenAI SDK: {e}")
         return "Error generating paraphrase."
 
-if __name__ == "__main__":
-    # Example usage (for testing the module directly)
-    initialize_gemini_api()
-    test_sentence = "The quick brown fox jumps over the lazy dog."
-    paraphrase = generate_paraphrase(test_sentence)
-    print(f"Original: {test_sentence}")
-    print(f"Paraphrase: {paraphrase}")
+# Helper used by facade to state current model for docs/logging
+def get_current_model_name() -> str:
+    return config.GEMINI_MODEL_NAME

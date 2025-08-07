@@ -2,6 +2,7 @@
 
 absl-py
 numpy<2.0
+requests>=2.31.0
 
 # Google GenAI SDK (Client-centric API)
 google-genai~=1.28

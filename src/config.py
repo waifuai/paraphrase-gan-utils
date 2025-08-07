@@ -1,6 +1,7 @@
 # src/config.py
 from pathlib import Path
 import os
+from typing import Optional
 
 # --- General ---
 SEED = 42
@@ -20,7 +21,53 @@ DEFAULT_MAX_LEN = 128  # Default max sequence length for tokenizers (adjust as n
 
 # --- Gemini API Configuration ---
 GEMINI_API_KEY_PATH = Path("~/.api-gemini").expanduser()
-GEMINI_MODEL_NAME = "gemini-2.5-pro"
+# Default Gemini model if no override files/env present
+DEFAULT_GEMINI_MODEL_NAME = "gemini-2.5-pro"
+GEMINI_MODEL_FILE_PATH = Path("~/.model-gemini").expanduser()
+
+# --- OpenRouter Configuration ---
+OPENROUTER_API_KEY_FILE_PATH = Path("~/.api-openrouter").expanduser()
+DEFAULT_OPENROUTER_MODEL_NAME = "openrouter/horizon-beta"
+OPENROUTER_MODEL_FILE_PATH = Path("~/.model-openrouter").expanduser()
+
+def _read_text_file(path: Path) -> Optional[str]:
+    try:
+        if path.is_file():
+            v = path.read_text(encoding="utf-8").strip()
+            return v if v else None
+    except Exception:
+        return None
+    return None
+
+def resolve_gemini_model_name() -> str:
+    """
+    Resolution order for Gemini model:
+    1) Env MODEL_GEMINI if set and non-empty
+    2) ~/.model-gemini file single line
+    3) DEFAULT_GEMINI_MODEL_NAME
+    """
+    env_val = os.getenv("MODEL_GEMINI")
+    if env_val and env_val.strip():
+        return env_val.strip()
+    file_val = _read_text_file(GEMINI_MODEL_FILE_PATH)
+    if file_val:
+        return file_val
+    return DEFAULT_GEMINI_MODEL_NAME
+
+def resolve_openrouter_model_name() -> str:
+    """
+    Resolution order for OpenRouter model:
+    1) Env MODEL_OPENROUTER if set and non-empty
+    2) ~/.model-openrouter file single line
+    3) DEFAULT_OPENROUTER_MODEL_NAME
+    """
+    env_val = os.getenv("MODEL_OPENROUTER")
+    if env_val and env_val.strip():
+        return env_val.strip()
+    file_val = _read_text_file(OPENROUTER_MODEL_FILE_PATH)
+    if file_val:
+        return file_val
+    return DEFAULT_OPENROUTER_MODEL_NAME
 
 def load_gemini_api_key() -> str:
     """
@@ -40,6 +87,9 @@ def load_gemini_api_key() -> str:
         raise FileNotFoundError(f"Gemini API key file not found at {GEMINI_API_KEY_PATH}")
     except Exception as e:
         raise RuntimeError(f"Error loading Gemini API key: {e}")
+
+# Backwards compatibility alias used by gemini_api
+GEMINI_MODEL_NAME = resolve_gemini_model_name()
 
 # --- Training Defaults (for Hugging Face Trainer) ---
 # These are now obsolete but kept for reference during refactoring
