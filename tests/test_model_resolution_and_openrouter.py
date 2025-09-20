@@ -46,7 +46,7 @@ def test_openrouter_post_success(mock_post, monkeypatch):
     mock_resp.json.return_value = {"choices": [{"message": {"content": "Paraphrase output"}}]}
     mock_post.return_value = mock_resp
 
-    out = post_chat_completion("openrouter/horizon-beta", "Paraphrase the following sentence: x")
+    out = post_chat_completion("deepseek/deepseek-chat-v3-0324:free", "Paraphrase the following sentence: x")
     assert out == "Paraphrase output"
     mock_post.assert_called_once()
 
@@ -60,7 +60,7 @@ def test_openrouter_post_non_200(mock_post, monkeypatch):
     mock_resp.json.return_value = {"error": "forbidden"}
     mock_post.return_value = mock_resp
 
-    out = post_chat_completion("openrouter/horizon-beta", "hello")
+    out = post_chat_completion("deepseek/deepseek-chat-v3-0324:free", "hello")
     assert out is None
 
 
@@ -73,5 +73,5 @@ def test_openrouter_classify_normalization(mock_post, monkeypatch):
     mock_resp.json.return_value = {"choices": [{"message": {"content": "The answer is 1"}}]}
     mock_post.return_value = mock_resp
 
-    out = classify_with_openrouter("example", "openrouter/horizon-beta")
+    out = classify_with_openrouter("example", "deepseek/deepseek-chat-v3-0324:free")
     assert out == "1"

@@ -27,7 +27,7 @@ GEMINI_MODEL_FILE_PATH = Path("~/.model-gemini").expanduser()
 
 # --- OpenRouter Configuration ---
 OPENROUTER_API_KEY_FILE_PATH = Path("~/.api-openrouter").expanduser()
-DEFAULT_OPENROUTER_MODEL_NAME = "openrouter/horizon-beta"
+DEFAULT_OPENROUTER_MODEL_NAME = "deepseek/deepseek-chat-v3-0324:free"
 OPENROUTER_MODEL_FILE_PATH = Path("~/.model-openrouter").expanduser()
 
 def _read_text_file(path: Path) -> Optional[str]:
@@ -103,3 +103,122 @@ GEMINI_MODEL_NAME = resolve_gemini_model_name()
 # --- Model ---
 # Default model checkpoint (now Gemini model name)
 # DEFAULT_MODEL_CHECKPOINT = "t5-small"
+
+# --- New System Configuration ---
+
+# API Configuration
+API_HOST = "0.0.0.0"
+API_PORT = 8000
+API_DEBUG = False
+API_WORKERS = 1
+
+# Cache Configuration
+CACHE_TYPE = "redis"  # "redis" or "memory"
+REDIS_URL = "redis://localhost:6379/0"
+CACHE_TTL = 3600  # Default TTL in seconds
+
+# Rate Limiting Configuration
+RATE_LIMIT_REQUESTS_PER_MINUTE = 60
+RATE_LIMIT_TOKENS_PER_MINUTE = 1000
+
+# Batch Processing Configuration
+BATCH_MAX_SIZE = 10
+BATCH_MAX_WORKERS = 4
+BATCH_MAX_RETRIES = 3
+BATCH_RETRY_DELAY = 1.0
+
+# Logging Configuration
+LOG_LEVEL = "INFO"
+LOG_FILE = None  # None for console only, or path to file
+LOG_MAX_SIZE = 10 * 1024 * 1024  # 10MB
+LOG_BACKUP_COUNT = 5
+
+# Evaluation Configuration
+EVALUATION_INCLUDE_SEMANTIC = True
+EVALUATION_MODEL_CACHE_SIZE = 1000
+
+# Security Configuration
+API_KEY_REQUIRED = False
+ALLOWED_ORIGINS = ["*"]  # Configure for production
+
+# Monitoring Configuration
+SENTRY_DSN = None  # Set to enable Sentry error tracking
+METRICS_ENABLED = False
+
+# Feature Flags
+ENABLE_CACHING = True
+ENABLE_RATE_LIMITING = True
+ENABLE_EVALUATION = True
+ENABLE_BATCH_PROCESSING = True
+
+# --- Component Factory Functions ---
+
+def get_cache():
+    """Get configured cache instance."""
+    if not ENABLE_CACHING:
+        from src.cache import MemoryCache
+        return MemoryCache()
+
+    from src.cache import get_cache as get_cache_instance
+    return get_cache_instance()
+
+def get_rate_limiter():
+    """Get configured rate limiter instance."""
+    if not ENABLE_RATE_LIMITING:
+        # Return a no-op rate limiter
+        class NoOpRateLimiter:
+            def wait_if_needed(self, *args, **kwargs): pass
+            def check_request(self, *args, **kwargs): return True, 0.0
+        return NoOpRateLimiter()
+
+    from src.rate_limiter import get_rate_limiter as get_rate_limiter_instance
+    return get_rate_limiter_instance()
+
+def get_batch_processor():
+    """Get configured batch processor instance."""
+    if not ENABLE_BATCH_PROCESSING:
+        # Return a simple processor
+        class SimpleProcessor:
+            def process_sync(self, texts): return [f"Processed: {text}" for text in texts]
+            def process_with_cache(self, texts): return self.process_sync(texts)
+        return SimpleProcessor()
+
+    from src.batch_processor import get_batch_processor as get_batch_processor_instance
+    return get_batch_processor_instance()
+
+def get_evaluator():
+    """Get configured evaluator instance."""
+    if not ENABLE_EVALUATION:
+        # Return a simple evaluator
+        class SimpleEvaluator:
+            def evaluate_paraphrase(self, orig, para): return {"overall_score": 0.5}
+            def evaluate_paraphrase_batch(self, origs, paras): return [{"overall_score": 0.5} for _ in origs]
+        return SimpleEvaluator()
+
+    from src.evaluation import get_evaluator as get_evaluator_instance
+    return get_evaluator_instance()
+
+def setup_system():
+    """Setup all system components with proper configuration."""
+    from src.logging_config import setup_logging
+
+    # Setup logging
+    setup_logging(
+        level=LOG_LEVEL,
+        log_file=LOG_FILE
+    )
+
+    # Initialize components
+    if ENABLE_CACHING:
+        get_cache()
+
+    if ENABLE_RATE_LIMITING:
+        get_rate_limiter()
+
+    if ENABLE_BATCH_PROCESSING:
+        get_batch_processor()
+
+    if ENABLE_EVALUATION:
+        get_evaluator()
+
+    print("System components initialized successfully")
