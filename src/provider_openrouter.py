@@ -1,3 +1,19 @@
+"""
+OpenRouter API integration for paraphrase generation and classification.
+
+This module provides integration with the OpenRouter API for both paraphrase
+generation and text classification tasks. It includes API key management,
+request handling, and response parsing for OpenRouter's chat completions API.
+
+Key Features:
+- OpenRouter API client for chat completions
+- Environment variable and file-based API key resolution
+- Text classification (human vs machine-generated)
+- Paraphrase generation with configurable models
+- Robust error handling and timeout management
+- Response validation and normalization
+- Support for multiple OpenRouter models
+"""
 # src/provider_openrouter.py
 from __future__ import annotations
 import os

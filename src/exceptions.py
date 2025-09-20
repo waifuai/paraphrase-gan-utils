@@ -1,3 +1,21 @@
+"""
+Custom exception hierarchy for the paraphrase generation system.
+
+This module defines a comprehensive exception hierarchy for handling various
+error conditions in the paraphrase system, including API errors, validation
+errors, rate limiting, and configuration issues. All exceptions provide
+detailed error information and support conversion to dictionaries for
+API responses and logging.
+
+Key Features:
+- Hierarchical exception structure with base ParaphraseError class
+- Provider-specific error types (APIError, AuthenticationError, RateLimitError)
+- Validation and configuration error handling
+- Batch processing error management
+- Error conversion utilities for API responses
+- Detailed error context and metadata
+- Original exception chaining support
+"""
 # src/exceptions.py
 from typing import Optional, Dict, Any
 import logging

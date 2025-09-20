@@ -1,3 +1,19 @@
+"""
+Custom dataset loading and tokenization utilities.
+
+This module provides functionality for loading custom TSV datasets and tokenizing
+them for use with transformer models. It supports both training and evaluation
+splits with configurable tokenization parameters.
+
+Key Features:
+- TSV dataset loading with proper column handling
+- Integration with Hugging Face datasets library
+- Tokenization with configurable sequence lengths
+- Support for T5-style prefix instructions
+- Column renaming and preprocessing
+- Batch processing support
+- Error handling for missing files
+"""
 # src/data_processing/custom_dataset.py
 from pathlib import Path
 from datasets import load_dataset, DatasetDict

@@ -1,3 +1,21 @@
+"""
+Paraphrase quality evaluation system.
+
+This module provides comprehensive evaluation of paraphrase quality using multiple
+metrics including lexical similarity, structural analysis, and semantic similarity.
+It supports both single paraphrase evaluation and batch processing with detailed
+scoring and statistical analysis.
+
+Key Features:
+- Lexical similarity metrics (word overlap, Jaccard similarity, cosine similarity)
+- Structural analysis (length ratio, sentence count, word length analysis)
+- Semantic similarity using sentence transformers (when available)
+- NLTK integration for advanced text processing
+- Batch evaluation with statistical summaries
+- Configurable evaluation metrics and thresholds
+- Comprehensive error handling and logging
+- Quality score aggregation and weighting
+"""
 # src/evaluation.py
 import re
 import string

@@ -1,3 +1,21 @@
+"""
+Structured logging configuration using structlog.
+
+This module provides comprehensive logging setup with JSON formatting,
+performance monitoring, and error handling decorators. It uses structlog
+for structured logging and includes utilities for performance monitoring
+and error handling.
+
+Key Features:
+- Structured JSON logging with structlog
+- Performance monitoring decorators
+- Error handling decorators with context
+- File and console logging support
+- Log rotation and size management
+- Configurable log levels and formatting
+- Request correlation ID support
+- Comprehensive error context logging
+"""
 # src/logging_config.py
 import logging
 import sys

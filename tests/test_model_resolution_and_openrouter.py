@@ -1,3 +1,19 @@
+"""
+Tests for model resolution and OpenRouter integration.
+
+This module contains comprehensive tests for model configuration resolution,
+OpenRouter API integration, and provider-specific functionality. It includes
+tests for environment variable resolution, file-based configuration, API
+connectivity, and response parsing.
+
+Key Features:
+- Model resolution testing with environment and file fallbacks
+- OpenRouter API integration tests with mocked responses
+- Configuration validation and error handling
+- Provider-specific API behavior testing
+- Response parsing and normalization validation
+- Error condition handling and edge cases
+"""
 # tests/test_model_resolution_and_openrouter.py
 import os
 from pathlib import Path

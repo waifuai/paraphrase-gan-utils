@@ -1,3 +1,20 @@
+"""
+Caching system with Redis and memory cache support.
+
+This module provides a comprehensive caching solution for the paraphrase system,
+supporting both Redis (distributed) and in-memory caching with automatic fallback.
+It includes cache decorators, TTL support, and cache warming capabilities.
+
+Key Features:
+- Redis cache implementation with automatic connection handling
+- In-memory cache with LRU eviction and size limits
+- Automatic fallback from Redis to memory cache
+- Cache decorators for function result caching
+- TTL (Time To Live) support for cache entries
+- Cache warming and pre-population
+- Cache statistics and monitoring
+- Thread-safe operations
+"""
 # src/cache.py
 import json
 import hashlib

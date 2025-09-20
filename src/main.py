@@ -1,3 +1,20 @@
+"""
+Main CLI application for the paraphrase generation system.
+
+This module serves as the primary entry point for the paraphrase system,
+providing a command-line interface with multiple operation modes including
+CLI, API server, batch processing, evaluation, and interactive modes.
+It uses absl-py for flag parsing and integrates with all system components.
+
+Key Features:
+- Multiple operation modes (CLI, API, batch, evaluate, interactive)
+- Abseil flags for command-line argument parsing
+- System component initialization and validation
+- Provider connectivity testing
+- Comprehensive error handling and logging
+- Legacy task-based execution support
+- Interactive mode for testing and experimentation
+"""
 # src/main.py
 from pathlib import Path
 import numpy as np

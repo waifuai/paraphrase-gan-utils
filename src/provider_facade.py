@@ -1,3 +1,20 @@
+"""
+Provider facade for unified AI model access.
+
+This module provides a unified interface for accessing different AI providers
+(Gemini, OpenRouter) with automatic model resolution and provider abstraction.
+It handles provider selection, model configuration, and routing requests to
+the appropriate backend.
+
+Key Features:
+- Provider-agnostic interface for paraphrase generation
+- Automatic model resolution with fallbacks
+- Environment variable and file-based configuration
+- Provider-specific model selection logic
+- Clean separation between provider implementations
+- Error handling and fallback mechanisms
+- Support for multiple providers with unified API
+"""
 # src/provider_facade.py
 from typing import Optional
 import config

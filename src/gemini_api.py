@@ -1,3 +1,18 @@
+"""
+Google Gemini API integration for paraphrase generation.
+
+This module provides a wrapper around the Google GenAI SDK for generating
+paraphrases using Google's Gemini models. It includes singleton client
+management, robust error handling, and response parsing.
+
+Key Features:
+- Singleton client pattern for efficient API usage
+- Environment variable and file-based API key resolution
+- Robust response parsing and text extraction
+- Comprehensive error handling and logging
+- Model configuration integration with config.py
+- Clean API for paraphrase generation
+"""
 # src/gemini_api.py
 from google import genai
 import os

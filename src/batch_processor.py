@@ -1,3 +1,19 @@
+"""
+Batch processing system for paraphrase generation.
+
+This module provides high-performance batch processing capabilities for generating
+multiple paraphrases concurrently. It includes job management, async processing,
+caching integration, and comprehensive error handling.
+
+Key Features:
+- Concurrent batch processing with thread pool execution
+- Asynchronous processing support
+- Job-based processing with status tracking
+- Retry logic with exponential backoff
+- Caching integration for improved performance
+- Progress tracking and error reporting
+- Memory-efficient processing for large datasets
+"""
 # src/batch_processor.py
 import asyncio
 import time

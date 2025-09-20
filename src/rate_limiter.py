@@ -1,3 +1,21 @@
+"""
+Rate limiting system with multiple algorithms and provider-specific limits.
+
+This module provides comprehensive rate limiting functionality using multiple
+algorithms including token bucket, fixed window, and sliding window approaches.
+It supports provider-specific limits, global limits, and automatic retry logic.
+
+Key Features:
+- Token bucket rate limiting with refill mechanisms
+- Fixed window and sliding window algorithms
+- Provider-specific rate limit configuration
+- Global rate limiting across all providers
+- Thread-safe operations with proper locking
+- Automatic retry delay calculation
+- Configurable limits and burst capacity
+- Rate limit exceeded exception handling
+- Decorator utilities for easy function wrapping
+"""
 # src/rate_limiter.py
 import time
 import threading

@@ -1,3 +1,19 @@
+"""
+REST API server for the paraphrase generation system.
+
+This module provides FastAPI endpoints for generating paraphrases, evaluating quality,
+and batch processing. It includes comprehensive error handling, rate limiting,
+caching, and async job management capabilities.
+
+Key Features:
+- Single and batch paraphrase generation endpoints
+- Quality evaluation endpoints
+- Async batch job processing with status tracking
+- Comprehensive error handling and logging
+- Rate limiting and caching integration
+- CORS support for web applications
+- Interactive API documentation
+"""
 # src/api.py
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware

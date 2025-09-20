@@ -1,3 +1,20 @@
+"""
+Configuration management system for the paraphrase generation application.
+
+This module provides comprehensive configuration management including environment
+variables, file-based configuration, model resolution, and component factory
+functions. It supports multiple providers (Gemini, OpenRouter) with flexible
+configuration resolution.
+
+Key Features:
+- Environment variable configuration with fallbacks
+- File-based configuration (API keys, model names)
+- Dynamic model resolution for different providers
+- Component factory functions for dependency injection
+- Path management and project structure configuration
+- Feature flags and system settings
+- Configuration validation and error handling
+"""
 # src/config.py
 from pathlib import Path
 import os
