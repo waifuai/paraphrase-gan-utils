@@ -26,7 +26,6 @@ from absl import logging
 
 # Import refactored modules
 import config
-import gemini_api  # existing gemini module
 from provider_facade import generate_paraphrase, DEFAULT_PROVIDER
 
 # Import new enhanced modules
@@ -77,7 +76,7 @@ flags.DEFINE_integer(
 flags.DEFINE_enum(
     "provider",
     DEFAULT_PROVIDER,
-    ["openrouter", "gemini"],
+    ["openrouter"],
     "Provider backend to use. Defaults to openrouter.",
 )
 flags.DEFINE_string(
@@ -115,14 +114,11 @@ def setup_and_validate():
         if FLAGS.task == "train_custom":
             sample = generate_paraphrase("This is a test.", provider=FLAGS.provider, model=FLAGS.model)
             print(f"API test sample: {sample[:80] if isinstance(sample, str) else sample}")
-            print(f"{FLAGS.provider} API connectivity validated.")
+            print(f"OpenRouter API connectivity validated.")
 
     except Exception as e:
         logger.error("System setup failed", error=str(e))
-        if FLAGS.provider == "gemini":
-            print("Please ensure your API key is correctly placed at ~/.api-gemini or env var set.")
-        else:
-            print("Please ensure your API key is set in OPENROUTER_API_KEY or ~/.api-openrouter.")
+        print("Please ensure your API key is set in OPENROUTER_API_KEY or ~/.api-openrouter.")
         sys.exit(1)
 
 def handle_single_paraphrase():

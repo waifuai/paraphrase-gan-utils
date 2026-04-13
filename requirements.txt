@@ -27,8 +27,5 @@ sentry-sdk>=1.30.0
 # Configuration
 python-dotenv>=1.0.0
 
-# Google GenAI SDK (Client-centric API)
-google-genai~=1.28
-
 # OpenRouter client
 httpx>=0.24.0

@@ -172,13 +172,7 @@ class ProviderRateLimiter:
     def _setup_default_limits(self):
         """Setup default rate limits for providers."""
 
-        # Gemini rate limits (requests per minute)
-        self.limiters["gemini"]["requests"] = TokenBucketLimiter(
-            capacity=60,  # 60 requests
-            refill_rate=1.0  # 1 request per second
-        )
-
-        # OpenRouter rate limits (more conservative)
+        # OpenRouter rate limits
         self.limiters["openrouter"]["requests"] = TokenBucketLimiter(
             capacity=30,  # 30 requests
             refill_rate=0.5  # 2 requests per second

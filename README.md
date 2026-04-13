@@ -4,7 +4,7 @@ A comprehensive, production-ready paraphrase generation system with advanced fea
 
 ## 🚀 Key Features
 
-- **Multiple AI Providers**: Support for Google Gemini and OpenRouter providers
+- **AI Provider**: OpenRouter chat completions API
 - **Batch Processing**: Efficiently process multiple texts with concurrent execution
 - **Quality Evaluation**: Comprehensive paraphrase quality scoring with lexical, structural, and semantic metrics
 - **Intelligent Caching**: Redis/memory caching to reduce API calls and improve performance
@@ -28,11 +28,10 @@ A comprehensive, production-ready paraphrase generation system with advanced fea
 │   ├── config.py             # Comprehensive configuration management
 │   ├── evaluation.py         # Paraphrase quality evaluation with multiple metrics
 │   ├── exceptions.py         # Custom exception hierarchy with detailed error info
-│   ├── gemini_api.py         # Wrapper around Google GenAI SDK Client
-│   ├── logging_config.py     # Structured logging with performance monitoring
+|   ├── logging_config.py     # Structured logging with performance monitoring
 │   ├── main.py               # Enhanced CLI with multiple operation modes
-│   ├── provider_facade.py    # Provider abstraction with fallback mechanisms
-│   ├── rate_limiter.py       # Multi-provider rate limiting system
+│   ├── provider_facade.py    # Provider abstraction
+│   ├── rate_limiter.py       # Rate limiting system
 │   ├── data_processing/      # Legacy data processing modules
 │   └── provider_openrouter.py # OpenRouter API integration
 ├── requirements.txt          # Runtime dependencies (includes FastAPI, caching, ML libraries)
@@ -47,7 +46,7 @@ A comprehensive, production-ready paraphrase generation system with advanced fea
 
 ### Prerequisites
 - Python 3.8+
-- API keys for your preferred providers (Gemini or OpenRouter)
+- API key for OpenRouter (get one from [OpenRouter](https://openrouter.ai/))
 
 ### Setup Steps
 
@@ -57,19 +56,15 @@ A comprehensive, production-ready paraphrase generation system with advanced fea
     cd <repository_name>
     ```
 
-2.  **Obtain API Keys:**
-    *   **Google Gemini**: Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2.  **Obtain API Key:**
     *   **OpenRouter**: Get an API key from [OpenRouter](https://openrouter.ai/)
 
-3.  **Configure API Keys:**
+3.  **Configure API Key:**
     ```bash
-    # Option 1: Environment variables (recommended)
-    export GEMINI_API_KEY="your-gemini-key"
-    # or
+    # Option 1: Environment variable (recommended)
     export OPENROUTER_API_KEY="your-openrouter-key"
 
-    # Option 2: Key files
-    echo "your-gemini-key" > ~/.api-gemini
+    # Option 2: Key file
     echo "your-openrouter-key" > ~/.api-openrouter
     ```
 
@@ -100,7 +95,7 @@ A comprehensive, production-ready paraphrase generation system with advanced fea
 
 ## Custom Dataset Format
 
-The custom dataset files (`data/custom_train.tsv`, `data/custom_eval.tsv`) are included for historical context and potential future use, but are not directly used by the current Gemini API-based paraphrase generation logic. They contain tab-separated pairs of sentences, where the first column is the source sentence and the second column is the target paraphrase. Example:
+The custom dataset files (`data/custom_train.tsv`, `data/custom_eval.tsv`) are included for historical context and potential future use, but are not directly used by the current OpenRouter-based paraphrase generation logic. They contain tab-separated pairs of sentences, where the first column is the source sentence and the second column is the target paraphrase. Example:
 
 ```tsv
 Original sentence one.<TAB>Paraphrased sentence one.
@@ -170,7 +165,7 @@ Generate multiple paraphrases
 ```json
 {
   "texts": ["Text 1", "Text 2", "Text 3"],
-  "provider": "gemini"
+  "provider": "openrouter"
 }
 ```
 
@@ -215,13 +210,11 @@ print(f"Quality score: {evaluation['overall_score']}")
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GEMINI_API_KEY` | Google Gemini API key | None |
-| `GOOGLE_API_KEY` | Alternative Gemini API key | None |
-| `OPENROUTER_API_KEY` | OpenRouter API key | None |
-| `REDIS_URL` | Redis connection URL | `redis://localhost:6379/0` |
-| `LOG_LEVEL` | Logging level | `INFO` |
+|| Variable | Description | Default |
+||----------|-------------|---------|
+|| `OPENROUTER_API_KEY` | OpenRouter API key | None |
+|| `REDIS_URL` | Redis connection URL | `redis://localhost:6379/0` |
+|| `LOG_LEVEL` | Logging level | `INFO` |
 
 ### Configuration File
 
@@ -265,7 +258,7 @@ The system provides comprehensive quality evaluation:
 
 ### Rate Limiting
 
-- **Provider-Specific Limits**: Different limits for Gemini vs OpenRouter
+- **Provider Limits**: OpenRouter-specific rate limits
 - **Adaptive Throttling**: Automatically adjusts based on API response headers
 - **Token-Based Limiting**: Supports both request count and token-based limits
 - **Exponential Backoff**: Smart retry logic with exponential backoff

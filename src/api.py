@@ -331,11 +331,10 @@ async def get_cache_stats():
 async def get_available_providers():
     """Get information about available providers."""
     return {
-        "providers": ["openrouter", "gemini"],
+        "providers": ["openrouter"],
         "default": "openrouter",
         "features": {
-            "openrouter": ["paraphrase", "classification"],
-            "gemini": ["paraphrase"]
+            "openrouter": ["paraphrase", "classification"]
         }
     }
 
