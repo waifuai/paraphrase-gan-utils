@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paraphrase Generation System</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --card-bg: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #7ee787;
+  --accent3: #d2a8ff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+.container { max-width: 1100px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 3rem; padding: 2rem 0; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+header p { color: var(--text-muted); font-size: 1.1rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.4rem; margin-bottom: 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 0.5rem; }
+.count { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
+.section-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+.link-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.link-list a { color: var(--accent); text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; transition: background 0.15s; font-size: 0.95rem; }
+.link-list a:hover { background: var(--card-bg); text-decoration: underline; }
+footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; padding-top: 2rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>paraphrase-gan-utils</h1>
+<p></p>
+</header>
+<section>
+<h2>Project Description</h2>
+<h1>Paraphrase Generation System</h1>
+<p>A comprehensive, production-ready paraphrase generation system with advanced features including batch processing, quality evaluation, caching, rate limiting, and REST API support.</p>
+<h2>🚀 Key Features</h2>
+<ul>
+<li><strong>AI Provider</strong>: OpenRouter chat completions API</li>
+<li><strong>Batch Processing</strong>: Efficiently process multiple texts with concurrent execution</li>
+<li><strong>Quality Evaluation</strong>: Comprehensive paraphrase quality scoring with lexical, structural, and semantic metrics</li>
+<li><strong>Intelligent Caching</strong>: Redis/memory caching to reduce API calls and improve performance</li>
+<li><strong>Rate Limiting</strong>: Built-in rate limiting to respect API quotas and prevent abuse</li>
+<li><strong>REST API</strong>: Full REST API with interactive documentation</li>
+<li><strong>Error Handling</strong>: Robust error handling with detailed logging and recovery mechanisms</li>
+<li><strong>Async Support</strong>: Asynchronous processing for high-throughput scenarios</li>
+<li><strong>Interactive Mode</strong>: CLI interactive mode for quick testing and experimentation</li>
+</ul>
+<h2>Project Structure</h2>
+<pre><code>.
+├── data/
+│   ├── custom_train.tsv      # Custom training data (tab-separated: source&lt;TAB&gt;target) - Used for structure reference
+│   └── custom_eval.tsv       # Custom evaluation data (tab-separated: source&lt;TAB&gt;target) - Used for structure reference
+├── src/
+│   ├── api.py                # FastAPI REST endpoints with automatic docs
+│   ├── batch_processor.py    # High-performance batch processing with concurrency
+│   ├── cache.py              # Redis/memory caching system with TTL support
+│   ├── config.py             # Comprehensive configuration management
+│   ├── evaluation.py         # Paraphrase quality evaluation with multiple metrics
+│   ├── exceptions.py         # Custom exception hierarchy with detailed error info
+|   ├── logging_config.py     # Structured logging with performance monitoring
+│   ├── main.py               # Enhanced CLI with multiple operation modes
+│   ├── provider_facade.py    # Provider abstraction
+│   ├── rate_limiter.py       # Rate limiting system
+│   ├── data_processing/      # Legacy data processing modules
+│   └── provider_openrouter.py # OpenRouter API integration
+├── requirements.txt          # Runtime dependencies (includes FastAPI, caching, ML libraries)
+├── requirements-dev.txt      # Development and testing dependencies
+├── logs/                     # Application logs (created automatically)
+├── .venv/                    # Virtual environment (created by uv)
+├── model_output/             # Default directory for output (less critical now)
+└── README.md
+</code></pre>
+<h2>Installation</h2>
+<h3>Prerequisites</h3>
+<ul>
+<li>Python 3.8+</li>
+<li>API key for OpenRouter (get one from <a href="https://openrouter.ai/">OpenRouter</a>)</li>
+</ul>
+<h3>Setup Steps</h3>
+<ol>
+<li>
+<p><strong>Clone the repository:</strong>
+    <code>bash
+    git clone &lt;repository_url&gt;
+    cd &lt;repository_name&gt;</code></p>
+</li>
+<li>
+<p><strong>Obtain API Key:</strong></p>
+<ul>
+<li><strong>OpenRouter</strong>: Get an API key from <a href="https://openrouter.ai/">OpenRouter</a></li>
+</ul>
+</li>
+<li>
+<p><strong>Configure API Key:</strong>
+    ```bash
+    # Option 1: Environment variable (recommended)
+    export OPENROUTER_API_KEY="your-openrouter-key"</p>
+<h1>Option 2: Key file</h1>
+<p>echo "your-openrouter-key" &gt; ~/.api-openrouter
+```</p>
+</li>
+<li>
+<p><strong>Create Virtual Environment:</strong>
+    <code>bash
+    python -m uv venv .venv
+    .venv/Scripts/python.exe -m ensurepip
+    .venv/Scripts/python.exe -m pip install uv</code></p>
+</li>
+<li>
+<p><strong>Install Dependencies:</strong>
+    ```bash
+    # Install runtime dependencies
+    .venv/Scripts/python.exe -m uv pip install -r requirements.txt</p>
+<h1>Install development dependencies (optional)</h1>
+<p>.venv/Scripts/python.exe -m uv pip install -r requirements-dev.txt
+```</p>
+</li>
+<li>
+<p><strong>Setup Optional Components:</strong>
+    ```bash
+    # For Redis caching (optional)
+    # Install and start Redis server, then set REDIS_URL=redis://localhost:6379/0</p>
+<h1>For sentence transformers (optional, for semantic evaluation)</h1>
+<p>.venv/Scripts/python.exe -m uv pip install sentence-transformers
+```</p>
+</li>
+</ol>
+<h2>Custom Dataset Format</h2>
+<p>The custom dataset files (<code>data/custom_train.tsv</code>, <code>data/custom_eval.tsv</code>) are included for historical context and potential future use, but are not directly used by the current OpenRouter-based paraphrase generation logic. They contain tab-separated pairs of sentences, where the first column is the source sentence and the second column is the target paraphrase. Example:</p>
+<pre><code class="language-tsv">Original sentence one.&lt;TAB&gt;Paraphrased sentence one.
+Original sentence two.&lt;TAB&gt;Paraphrased sentence two.
+</code></pre>
+<h2>Usage</h2>
+<p>The system supports multiple operation modes for different use cases.</p>
+<h3>Command Line Interface</h3>
+<h4>Single Paraphrase Generation</h4>
+<pre><code class="language-bash">.venv/Scripts/python.exe -m src.main --mode cli --decode_input &quot;This is the sentence to paraphrase.&quot;
+</code></pre>
+<h4>Batch Processing</h4>
+<pre><code class="language-bash"># Process multiple texts from a file
+.venv/Scripts/python.exe -m src.main --mode batch --batch_input input.txt --batch_output results.txt
+
+# Process a single text in batch mode
+.venv/Scripts/python.exe -m src.main --mode batch --decode_input &quot;Text to paraphrase&quot;
+</code></pre>
+<h4>Interactive Mode</h4>
+<pre><code class="language-bash">.venv/Scripts/python.exe -m src.main --mode interactive
+</code></pre>
+<h4>Quality Evaluation</h4>
+<pre><code class="language-bash">.venv/Scripts/python.exe -m src.main --mode evaluate \
+    --evaluate_original &quot;Original text&quot; \
+    --evaluate_paraphrase &quot;Generated paraphrase&quot;
+</code></pre>
+<h3>REST API Server</h3>
+<p>Start the REST API server with automatic documentation:</p>
+<pre><code class="language-bash">.venv/Scripts/python.exe -m src.main --mode api --port 8000
+</code></pre>
+<p>The API will be available at:
+- <strong>Main API</strong>: http://localhost:8000
+- <strong>Interactive Docs</strong>: http://localhost:8000/docs
+- <strong>Alternative Docs</strong>: http://localhost:8000/redoc
+- <strong>Health Check</strong>: http://localhost:8000/health</p>
+<h4>API Endpoints</h4>
+<p><strong>POST /paraphrase</strong>
+Generate a single paraphrase</p>
+<pre><code class="language-json">{
+  &quot;text&quot;: &quot;This is the sentence to paraphrase.&quot;,
+  &quot;provider&quot;: &quot;openrouter&quot;,
+  &quot;model&quot;: &quot;anthropic/claude-3-sonnet&quot;
+}
+</code></pre>
+<p><strong>POST /paraphrase/batch</strong>
+Generate multiple paraphrases</p>
+<pre><code class="language-json">{
+  &quot;texts&quot;: [&quot;Text 1&quot;, &quot;Text 2&quot;, &quot;Text 3&quot;],
+  &quot;provider&quot;: &quot;openrouter&quot;
+}
+</code></pre>
+<p><strong>POST /evaluate</strong>
+Evaluate paraphrase quality</p>
+<pre><code class="language-json">{
+  &quot;original&quot;: &quot;Original text&quot;,
+  &quot;paraphrase&quot;: &quot;Generated paraphrase&quot;,
+  &quot;include_semantic&quot;: true
+}
+</code></pre>
+<h3>Python API Usage</h3>
+<pre><code class="language-python">from src.main import generate_paraphrase, paraphrase_batch
+from src.evaluation import evaluate_paraphrase
+from src.config import setup_system
+
+# Setup system components
+setup_system()
+
+# Single paraphrase
+result = generate_paraphrase(&quot;This is a test sentence.&quot;)
+print(f&quot;Paraphrase: {result}&quot;)
+
+# Batch processing
+texts = [&quot;Text 1&quot;, &quot;Text 2&quot;, &quot;Text 3&quot;]
+results = paraphrase_batch(texts)
+print(f&quot;Results: {results}&quot;)
+
+# Quality evaluation
+evaluation = evaluate_paraphrase(
+    original=&quot;Original text&quot;,
+    paraphrase=&quot;Generated paraphrase&quot;
+)
+print(f&quot;Quality score: {evaluation['overall_score']}&quot;)
+</code></pre>
+<h2>Configuration</h2>
+<h3>Environment Variables</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td><code>OPENROUTER_API_KEY</code></td>
+<td>OpenRouter API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td></td>
+<td><code>REDIS_URL</code></td>
+<td>Redis connection URL</td>
+<td><code>redis://localhost:6379/0</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>LOG_LEVEL</code></td>
+<td>Logging level</td>
+<td><code>INFO</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Configuration File</h3>
+<p>Advanced configuration can be modified in <code>src/config.py</code>:</p>
+<pre><code class="language-python"># API Settings
+API_HOST = &quot;0.0.0.0&quot;
+API_PORT = 8000
+API_DEBUG = False
+
+# Cache Settings
+CACHE_TYPE = &quot;redis&quot;  # &quot;redis&quot; or &quot;memory&quot;
+CACHE_TTL = 3600  # 1 hour default
+
+# Rate Limiting
+RATE_LIMIT_REQUESTS_PER_MINUTE = 60
+
+# Batch Processing
+BATCH_MAX_SIZE = 10
+BATCH_MAX_WORKERS = 4
+</code></pre>
+<h2>Advanced Features</h2>
+<h3>Quality Evaluation Metrics</h3>
+<p>The system provides comprehensive quality evaluation:</p>
+<ul>
+<li><strong>Lexical Similarity</strong>: Word overlap, Jaccard similarity, cosine similarity</li>
+<li><strong>Structural Similarity</strong>: Length ratio, sentence count differences</li>
+<li><strong>Semantic Similarity</strong>: BERT-based sentence embeddings (when available)</li>
+<li><strong>Overall Quality Score</strong>: Weighted combination of all metrics</li>
+</ul>
+<h3>Caching System</h3>
+<ul>
+<li><strong>Memory Cache</strong>: Fast in-process caching with TTL support</li>
+<li><strong>Redis Cache</strong>: Distributed caching for multi-instance deployments</li>
+<li><strong>Automatic Fallback</strong>: Falls back to memory cache if Redis unavailable</li>
+<li><strong>Cache Warming</strong>: Intelligent cache population for frequently used texts</li>
+</ul>
+<h3>Rate Limiting</h3>
+<ul>
+<li><strong>Provider Limits</strong>: OpenRouter-specific rate limits</li>
+<li><strong>Adaptive Throttling</strong>: Automatically adjusts based on API response headers</li>
+<li><strong>Token-Based Limiting</strong>: Supports both request count and token-based limits</li>
+<li><strong>Exponential Backoff</strong>: Smart retry logic with exponential backoff</li>
+</ul>
+<h3>Batch Processing</h3>
+<ul>
+<li><strong>Concurrent Execution</strong>: Multi-threaded processing for high throughput</li>
+<li><strong>Progress Tracking</strong>: Real-time progress updates for long-running jobs</li>
+<li><strong>Error Resilience</strong>: Continues processing even if some items fail</li>
+<li><strong>Result Aggregation</strong>: Comprehensive statistics and error reporting</li>
+</ul>
+<h3>Error Handling</h3>
+<ul>
+<li><strong>Custom Exception Hierarchy</strong>: Specific exceptions for different error types</li>
+<li><strong>Structured Logging</strong>: Detailed error logging with context</li>
+<li><strong>Graceful Degradation</strong>: Continues operation when non-critical components fail</li>
+<li><strong>Recovery Mechanisms</strong>: Automatic retry with exponential backoff</li>
+</ul>
+<h2>Docker Deployment</h2>
+<p>Create a <code>Dockerfile</code> for containerized deployment:</p>
+<pre><code class="language-dockerfile">FROM python:3.9-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY src/ ./src/
+COPY data/ ./data/
+
+EXPOSE 8000
+CMD [&quot;python&quot;, &quot;-m&quot;, &quot;src.main&quot;, &quot;--mode&quot;, &quot;api&quot;, &quot;--port&quot;, &quot;8000&quot;]
+</code></pre>
+<h2>Monitoring and Observability</h2>
+<p>The system includes comprehensive monitoring:</p>
+<ul>
+<li><strong>Structured Logging</strong>: JSON-formatted logs with correlation IDs</li>
+<li><strong>Performance Metrics</strong>: Request latency, throughput, error rates</li>
+<li><strong>Health Checks</strong>: Built-in health endpoints for load balancers</li>
+<li><strong>Cache Statistics</strong>: Hit rates, memory usage, eviction counts</li>
+<li><strong>Rate Limit Monitoring</strong>: Current usage vs limits</li>
+</ul>
+<h2>Development</h2>
+<h3>Running Tests</h3>
+<pre><code class="language-bash"># Install development dependencies
+.venv/Scripts/python.exe -m uv pip install -r requirements-dev.txt
+
+# Run tests
+.venv/Scripts/python.exe -m pytest tests/
+
+# Run with coverage
+.venv/Scripts/python.exe -m pytest --cov=src tests/
+</code></pre>
+<h3>Code Quality</h3>
+<pre><code class="language-bash"># Format code
+.venv/Scripts/python.exe -m black src/
+
+# Type checking
+.venv/Scripts/python.exe -m mypy src/
+
+# Linting
+.venv/Scripts/python.exe -m flake8 src/
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Common Issues</h3>
+<ol>
+<li><strong>API Key Errors</strong>: Ensure API keys are properly configured in environment variables or key files</li>
+<li><strong>Rate Limiting</strong>: System will automatically handle rate limits with backoff - check logs for details</li>
+<li><strong>Memory Issues</strong>: Reduce batch size or enable Redis caching for large workloads</li>
+<li><strong>Performance</strong>: Use Redis instead of memory cache for multi-process deployments</li>
+</ol>
+<h3>Debug Mode</h3>
+<p>Enable verbose logging for troubleshooting:</p>
+<pre><code class="language-bash">.venv/Scripts/python.exe -m src.main --mode api --verbose
+</code></pre>
+<h2>Contributing</h2>
+<ol>
+<li>Fork the repository</li>
+<li>Create a feature branch</li>
+<li>Make your changes</li>
+<li>Add tests for new functionality</li>
+<li>Ensure all tests pass</li>
+<li>Submit a pull request</li>
+</ol>
+<h2>License</h2>
+<p>This project is licensed under the MIT-0 License. See the LICENSE file for details.</p>
+</section>
+<section>
+<h2>Source Code</h2>
+<p class="section-desc">GitHub repository</p>
+<div class="link-list">
+<a href="https://github.com/waifuai/paraphrase-gan-utils">https://github.com/waifuai/paraphrase-gan-utils</a>
+</div>
+</section>
+<footer>
+<p>Generated for AI agent crawlability. Source: <a href="https://github.com/waifuai/paraphrase-gan-utils">GitHub</a></p>
+</footer>
+</div>
+</body>
+</html>
