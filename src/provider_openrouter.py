@@ -49,6 +49,10 @@ def post_chat_completion(model_name: str, prompt: str, timeout: int = 60) -> Opt
     }
     headers = {
         "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://waifuai.com",
+        "X-OpenRouter-Title": "Waifu AI",
+        "X-Title": "Waifu AI",
+        "X-OpenRouter-Categories": "character-chat",
         "Content-Type": "application/json",
     }
 
