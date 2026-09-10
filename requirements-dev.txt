@@ -1,4 +1,4 @@
 # Developer requirements: includes base requirements and pinned test tooling
 -r requirements.txt
 
-pytest==8.3.3
+pytest==9.1.1
